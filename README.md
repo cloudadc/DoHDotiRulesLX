@@ -4,6 +4,8 @@ The following configurations handle both inbound DNS over HTTPS and DNS over TLS
 
 ## DNS over TLS
 
+DoT is simply putting a client-SSL profile on a virtual server that handles DNS. 
+
 This deployment is meant to be compliant with RFC7858. Please report and deviations or issues.
 
 https://tools.ietf.org/html/rfc7858
