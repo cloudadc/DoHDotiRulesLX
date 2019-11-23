@@ -62,6 +62,18 @@ This iRulesLX powered DoH proxy attempts to be compliant with RFC8484. Please re
 
 https://tools.ietf.org/html/rfc8484
 
+### LX iRule Installation
+
+1. Provision iRulesLX. (https://devcentral.f5.com/s/articles/getting-started-with-irules-lx-configuration-workflow-20410)
+2. Create an iRulesLX workspace titled "DoH_to_DNS_Proxy"
+3. Add the iRule to the workspace by clicking "Add iRule", entering DoH_to_DNS_Proxy and pasting the contents of DoHDoTiRule.tcl
+4. Modify the index.js extension and paste the contents of DohDotiRulesLX.js
+5. From the command line, install the required modules:
+  - cd /var/ilx/workspaces/Common/DoH_to_DNS_Proxy/extensions/DoH_to_DNS_Proxy
+  - npm install dgram base64url --save
+6. Create the iRulesLX plugin titled "DoH_to_DNS_Proxy"
+7. Apply the iRule to your virtual server(s)
+
 ### Sample Virtual Server:
 
 ltm virtual dns_over_https {  
