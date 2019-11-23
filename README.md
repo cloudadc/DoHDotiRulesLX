@@ -70,7 +70,7 @@ https://tools.ietf.org/html/rfc8484
 4. Modify the index.js extension and paste the contents of DohDotiRulesLX.js
 5. From the command line, install the required modules:
   - cd /var/ilx/workspaces/Common/DoH_to_DNS_Proxy/extensions/DoH_to_DNS_Proxy
-  - npm install dgram base64url --save
+  - npm install dgram base64url dns-packet net --save
 6. Create the iRulesLX plugin titled "DoH_to_DNS_Proxy"
 7. Apply the iRule to your virtual server(s)
 
