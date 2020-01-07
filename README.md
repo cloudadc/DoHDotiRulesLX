@@ -2,6 +2,8 @@
 
 The following configurations handle both inbound DNS over HTTPS and DNS over TLS requests. For proxying inbound traditional DNS to back-end DoH/DoT servers, see Eric Chen's work at [DevCentral](https://devcentral.f5.com/s/articles/unbreaking-the-internet-and-converting-protocols-30756).
 
+NOTE: You need a certificate on your virtual server HTTPS profiles that the end client (Firefox/Chrome/etc) will recognize. Self-signed certs cannot be "accepted" manually, so you'll need to add those to the browser certificate store manually if you're testing with them.
+
 ## DNS over TLS
 
 DoT is simply putting a client-SSL profile on a virtual server that handles DNS. 
