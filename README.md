@@ -65,14 +65,14 @@ https://tools.ietf.org/html/rfc8484
 ### LX iRule Installation
 
 1. Provision iRulesLX. (https://devcentral.f5.com/s/articles/getting-started-with-irules-lx-configuration-workflow-20410)
-2. Create an iRulesLX workspace titled "DoH_to_DNS_Proxy"
+2. Navigate to LTM -> iRules -> LX Workspaces. Create an iRulesLX workspace titled "DoH_to_DNS_Proxy"
 3. Add the iRule to the workspace by clicking "Add iRule", entering DoH_to_DNS_Proxy and pasting the contents of DoHDoTiRule.tcl
 4. Click "Create Extension" and enter "DoH_to_DNS_Proxy" as the name and click OK.
 5. Modify the index.js extension and paste the contents of DohDotiRulesLX.js
 6. From the command line, install the required modules (dgram is a core module and does not need to be installed):
   - cd /var/ilx/workspaces/Common/DoH_to_DNS_Proxy/extensions/DoH_to_DNS_Proxy
   - npm install base64url dns-packet net --save
-7. Create the iRulesLX plugin titled "DoH_to_DNS_Proxy"
+7. Navigate to LTM -> iRules -> LX Plugins. Create the iRulesLX plugin titled "DoH_to_DNS_Proxy" and select the "DoH_to_DNS_Proxy" workspace. Click Finished.
 8. Apply the iRule to your virtual server(s)
 
 ### Sample Virtual Server:
