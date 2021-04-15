@@ -1,9 +1,11 @@
 when HTTP_REQUEST {  
     set ilx_handle [ILX::init "DoH_to_DNS_Proxy" "DoH_to_DNS_Proxy"]  
-    set dns_timeout 1500  
+    set dns_timeout 15000  
+    set cip [IP::client_addr]
+    
     log local0.info "DNSoHTTPS: [IP::client_addr] [HTTP::method] [HTTP::uri] Accept: [HTTP::header "accept"] Content-type: [HTTP::header "content-type"]"  
     if { ([HTTP::method] equals "GET") and (([HTTP::header "accept"] equals "application/dns-message") or ([HTTP::header "content-type"] equals "application/dns-message")) } {  
-        if {[catch { ILX::call $ilx_handle -timeout "$dns_timeout" "RFC8484_get" [URI::query [HTTP::uri] dns] } result]} {  
+        if {[catch { ILX::call $ilx_handle -timeout "$dns_timeout" "RFC8484_get" [URI::query [HTTP::uri] dns] $cip } result]} {  
             log local0.error "ILX Failure: $result"  
             HTTP::respond 408 content "Request timed out" noserver   
         } else {  
@@ -35,8 +37,9 @@ when HTTP_REQUEST {
   
   
 when HTTP_REQUEST_DATA {  
-        log local0.info "POST body"  
-    if {[catch { ILX::call $ilx_handle -timeout $dns_timeout "RFC8484_post" [b64encode [HTTP::payload]] } result]} {  
+        log local0.info "POST body: [HTTP::payload]" 
+        set cip [IP::client_addr]
+    if {[catch { ILX::call $ilx_handle -timeout $dns_timeout "RFC8484_post" [b64encode [HTTP::payload]] $cip } result]} {  
         log local0.error "ILX Failure: $result"  
         HTTP::respond 408 content "Request timed out" noserver   
     }   
@@ -46,4 +49,6 @@ when HTTP_REQUEST_DATA {
         log local0.info "DNS answer for [IP::client_addr] (len $contentlength)"  
         HTTP::respond 200 content $result noserver content-type application/dns-message vary Accept-Encoding content-length $contentlength  
     }  
+} 
+
 } 
