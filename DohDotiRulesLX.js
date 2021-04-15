@@ -10,19 +10,59 @@ var errMessage = Buffer.from('Internal Server Error').toString('base64');
   
 var ilx = new f5.ILXServer();  
 ilx.listen();  
+
   
 ilx.addMethod('RFC8484_get', function(req, res) {  
-    const msg = base64url.toBuffer(req.params()[0]);  
-    rfc8484_handler_get(msg, res);  
+    const msg = base64url.toBuffer(req.params()[0]);
+    const cip = req.params()[1];
+    rfc8484_handler_get(msg, cip, res);  
 });  
   
 ilx.addMethod('RFC8484_post', function(req, res) {  
-    const msg = Buffer.from(req.params()[0],'base64');  
-    rfc8484_handler_post(msg, res);  
+    const msg = Buffer.from(req.params()[0],'base64'); 
+    const cip = req.params()[1];
+    rfc8484_handler_post(msg, cip, res);  
 });  
+
+function add_ecs(msg,cip) {
+    var packet_req = dnsPacket.decode(msg);
+    var cip_type  ;
+    var cip_prefix ;
+    
+    if(cip.indexOf(".") != -1){
+       cip_type = 1;
+       cip_prefix = 32;
+       console.log("ipv4");
+    } else{
+       cip_type = 2;
+       cip_prefix = 128;
+       console.log("ipv6");
+    }
+    
+    packet_req.additionals = [{
+     type: 'OPT',
+     name: '.',
+     udpPayloadSize: 4096,
+     flags: 0,
+     options: [{
+       code: 'CLIENT_SUBNET',
+       family: cip_type, // 1 for IPv4, 2 for IPv6
+       sourcePrefixLength: cip_prefix, // used to truncate IP address
+       scopePrefixLength: 0,
+       ip: cip
+     }]
+    }];
+    
+    //console.log(packet_req);
+    var request_ecs = dnsPacket.encode(packet_req); 
+    return request_ecs;
+}
   
-function rfc8484_handler_get(msg, res) {  
-    const server = dgram.createSocket('udp4');  
+function rfc8484_handler_get(msg, cip, res) {  
+    const server = dgram.createSocket('udp4'); 
+    
+    var request_ecs = add_ecs(msg,cip);
+    
     server.on('error', (err) => {  
         res.statusCode = 500;  
         res.reply([errMessage,Buffer.byteLength(errMessage)]);  
@@ -41,9 +81,9 @@ function rfc8484_handler_get(msg, res) {
             console.log('Answer is Truncated...Trying TCP Transport');  
             // DNS query using TCP transport  
             const tcpServer = new net.Socket();  
-            tcpServer.connect(53, '192.168.2.10', function () {  
+            tcpServer.connect(53, '10.1.10.2', function () {  
                 console.log('TCP Connection ESTABLISHED');  
-                var msgString = msg.toString();  
+                var msgString = request_ecs.toString();  
                 var msgSize = msgString.length;  
                 var bufferSize = msgSize + 2;  
                 var buffer = new Buffer(bufferSize);  
@@ -65,13 +105,17 @@ function rfc8484_handler_get(msg, res) {
             });  
         }  
     });  
+    
     server.bind(0, () => {  
-        server.send(msg, 53, '192.168.2.10');  
+        server.send(request_ecs, 53, '10.1.10.2');  
     });  
 }  
 
-function rfc8484_handler_post(msg, res) {  
+function rfc8484_handler_post(msg, cip, res) {  
     const server = dgram.createSocket('udp4');  
+    
+    var request_ecs = add_ecs(msg,cip);
+    
     server.on('error', (err) => {  
         res.statusCode = 500;  
         res.reply([errMessage,Buffer.byteLength(errMessage)]);  
@@ -80,18 +124,23 @@ function rfc8484_handler_post(msg, res) {
     server.on('message', (resp, rinfo) => {  
         console.log('DNS Answer From  ' + rinfo.address + ':' + rinfo.port + 'Length: ' + rinfo.size);  
         // Checking for Truncated flag  
-        var packet = dnsPacket.decode(resp);  
+        var packet = dnsPacket.decode(resp);
+         
         var isTruncated = packet.flags & dnsPacket.TRUNCATED_RESPONSE;  
+        console.log('Answer is NOT Truncated. Flag is:' + isTruncated + '.Returning DNS Response');
+        //console.log(packet);
+        
+        
         if (isTruncated == "0") {  
-            console.log('Answer is NOT Truncated. Flag is:' + isTruncated + '.Returning DNS Response');  
+              
             res.reply([resp.toString('base64'),rinfo.size]);  
         } else {  
             console.log('Answer is Truncated...Trying TCP Transport');  
             // DNS query using TCP transport  
             const tcpServer = new net.Socket();  
-            tcpServer.connect(53, '192.168.2.10', function () {  
+            tcpServer.connect(53, '10.1.10.2', function () {  
                 console.log('TCP Connection ESTABLISHED');  
-                var msgString = msg.toString();  
+                var msgString = request_ecs.toString();  
                 var msgSize = msgString.length;  
                 var bufferSize = msgSize + 2;  
                 var buffer = new Buffer(bufferSize);  
@@ -113,7 +162,11 @@ function rfc8484_handler_post(msg, res) {
             });  
         }  
     });  
+    
+    
+    
     server.bind(0, () => {  
-        server.send(msg, 53, '192.168.2.10');  
+        server.send(request_ecs, 53, '10.1.10.2');  
     });  
 }  
+
